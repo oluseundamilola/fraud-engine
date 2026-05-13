@@ -29,6 +29,10 @@ management:
       probability: 1.0 # report 100% of traces
 
 spring:
+  data:
+    redis:
+      host: localhost
+      port: 6379
   kafka:
     consumer:
       group-id: fraud-engine-group

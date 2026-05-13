@@ -1,0 +1,47 @@
+enum FraudColor {
+    GREEN,
+    YELLOW,
+    ORANGE,
+    RED
+}
+
+
+
+
+entity Transaction {
+
+    transactionReference String required unique,
+
+    fromAccount String required,
+
+    toAccount String required,
+
+    amount BigDecimal required,
+
+    transactionType String,
+
+    status String,
+
+    location String,
+
+    ipAddress String,
+
+    createdAt Instant required,
+
+    deviceId String,
+
+    narration String,
+
+    fraudScore Integer,
+
+    blocked Boolean required,
+
+    reason String,
+
+    color FraudColor
+}
+
+dto * with mapstruct
+service * with serviceClass
+paginate * with pagination
+filter *

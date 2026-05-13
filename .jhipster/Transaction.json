@@ -1,0 +1,85 @@
+{
+  "annotations": {
+    "changelogDate": "20260510160119"
+  },
+  "applications": "*",
+  "clientRootFolder": "fraudEngine",
+  "databaseType": "sql",
+  "dto": "mapstruct",
+  "fields": [
+    {
+      "fieldName": "transactionReference",
+      "fieldType": "String",
+      "fieldValidateRules": ["required", "unique"]
+    },
+    {
+      "fieldName": "fromAccount",
+      "fieldType": "String",
+      "fieldValidateRules": ["required"]
+    },
+    {
+      "fieldName": "toAccount",
+      "fieldType": "String",
+      "fieldValidateRules": ["required"]
+    },
+    {
+      "fieldName": "amount",
+      "fieldType": "BigDecimal",
+      "fieldValidateRules": ["required"]
+    },
+    {
+      "fieldName": "transactionType",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "status",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "location",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "ipAddress",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "createdAt",
+      "fieldType": "Instant",
+      "fieldValidateRules": ["required"]
+    },
+    {
+      "fieldName": "deviceId",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "narration",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "fraudScore",
+      "fieldType": "Integer"
+    },
+    {
+      "fieldName": "blocked",
+      "fieldType": "Boolean",
+      "fieldValidateRules": ["required"]
+    },
+    {
+      "fieldName": "reason",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "color",
+      "fieldType": "FraudColor",
+      "fieldValues": "GREEN,YELLOW,ORANGE,RED"
+    }
+  ],
+  "jpaMetamodelFiltering": true,
+  "microserviceName": "fraudEngine",
+  "name": "Transaction",
+  "pagination": "pagination",
+  "relationships": [],
+  "searchEngine": "no",
+  "service": "serviceClass"
+}

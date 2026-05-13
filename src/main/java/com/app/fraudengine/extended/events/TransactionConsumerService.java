@@ -2,13 +2,18 @@ package com.app.fraudengine.extended.events;
 
 
 import com.app.fraudengine.extended.DTOs.TransactionEventDTO;
+import com.app.fraudengine.extended.service.FraudRuleEngine;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 
 @Slf4j
 @Service
 public class TransactionConsumerService {
+
+    @Autowired
+    private FraudRuleEngine fraudRuleEngine;
 
     @KafkaListener(
         topics = "transactions",
@@ -17,6 +22,8 @@ public class TransactionConsumerService {
     public void consumeTransactionEvent(
         TransactionEventDTO event
     ) {
+
+        fraudRuleEngine.redLevelInspection(event);
 
         log.info(
             "[FRAUD-ENGINE] Transaction received | Ref: {} | Amount: {} | From: {} | To: {}",
