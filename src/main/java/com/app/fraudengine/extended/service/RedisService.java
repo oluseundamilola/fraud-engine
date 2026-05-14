@@ -45,7 +45,7 @@ public class RedisService {
         Long count = redisTemplate.opsForValue().increment(key);
 
         if (count != null) {
-            redisTemplate.expire(key, ttlMinutes, TimeUnit.MINUTES);
+            redisTemplate.expire(key, ttlMinutes, TimeUnit.SECONDS);
         }
 
         return count;

@@ -22,11 +22,11 @@ import java.util.List;
 @Slf4j
 public class FraudRuleEngine {
 
-    private static final int HIGH_AMOUNT_SCORE = 40;
+    private static final int HIGH_AMOUNT_SCORE = 80;
     private static final int NEW_DEVICE_SCORE = 30;
     private static final int NEW_LOCATION_SCORE = 30;
     private static final int VELOCITY_SCORE = 40;
-    private static final int VERY_HIGH_AMOUNT_SCORE = 80;
+    private static final int VERY_HIGH_AMOUNT_SCORE = 100;
 
     @Autowired
     private TransactionUtils transactionUtils;
@@ -39,6 +39,10 @@ public class FraudRuleEngine {
 
     @Autowired
     private RedisService redisService;
+
+    @Autowired
+    private LiveTransactionStreamService
+        liveTransactionStreamService;
 
     public TransactionDTO redLevelInspection(
         TransactionEventDTO event
@@ -94,6 +98,9 @@ public class FraudRuleEngine {
         // =========================
         transactionService.save(transaction);
 
+        liveTransactionStreamService
+            .publishTransaction(transaction);
+
         return transaction;
     }
 
@@ -146,7 +153,7 @@ public class FraudRuleEngine {
          * Threshold = 200k
          */
         BigDecimal veryHighThreshold =
-            avgAmount.multiply(BigDecimal.valueOf(20));
+            avgAmount.multiply(BigDecimal.valueOf(5));
 
         // ------------------------------------------------
         // VERY HIGH / EXTREME AMOUNT
@@ -156,7 +163,7 @@ public class FraudRuleEngine {
 
                 // Hard ceiling protection
                 currentAmount.compareTo(
-                    BigDecimal.valueOf(500000)
+                    BigDecimal.valueOf(200000)
                 ) > 0
         ) {
 
@@ -211,6 +218,17 @@ public class FraudRuleEngine {
 
         FraudRuleResult result =
             new FraudRuleResult();
+
+        String account =
+            transaction.getFromAccount();
+
+        int transactionCount =
+            transactionUtils.countTransactions(account);
+
+        // Ignore accounts with little history
+        if (transactionCount < 3) {
+            return result;
+        }
 
         boolean isNewDevice =
             transactionUtils.isNewDevice(
@@ -287,7 +305,7 @@ public class FraudRuleEngine {
         Long count =
             redisService.incrementWithTTL(
                 key,
-                4
+                10
             );
 
         if (count != null && count >= 3) {
@@ -370,7 +388,7 @@ public class FraudRuleEngine {
         int score
     ) {
 
-        if (score >= 70) {
+        if (score >= 100) {
 
             transaction.setColor(FraudColor.RED);
 
@@ -387,13 +405,13 @@ public class FraudRuleEngine {
 
             publisherService.publishInspectionResult(result);
 
-        } else if (score >= 60) {
+        } else if (score >= 90) {
 
             transaction.setColor(FraudColor.ORANGE);
 
             transaction.setBlocked(false);
 
-        } else if (score >= 50) {
+        } else if (score >= 10) {
 
             transaction.setColor(FraudColor.YELLOW);
 

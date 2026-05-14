@@ -29,6 +29,14 @@ management:
       probability: 1.0 # report 100% of traces
 
 spring:
+  mvc:
+    cors:
+      allowed-origins: "http://localhost:5173"
+      allowed-methods: "*"
+      allowed-headers: "*"
+      exposed-headers: "Authorization,Link,X-Total-Count"
+      allow-credentials: true
+      max-age: 1800
   data:
     redis:
       host: localhost
