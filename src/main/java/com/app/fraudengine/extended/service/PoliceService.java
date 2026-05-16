@@ -1,14 +1,22 @@
 package com.app.fraudengine.extended.service;
 
+import com.app.fraudengine.domain.Transaction;
 import com.app.fraudengine.extended.DTOs.TransactionEventDTO;
 import com.app.fraudengine.extended.utils.TransactionUtils;
+import com.app.fraudengine.repository.TransactionRepository;
 import com.app.fraudengine.service.dto.TransactionDTO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 
+import org.springframework.data.domain.Pageable;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import jakarta.persistence.criteria.Predicate;
 
 @Service
 @RequiredArgsConstructor
@@ -16,87 +24,84 @@ import java.util.List;
 public class PoliceService {
 
     private final TransactionUtils transactionUtils;
+    private final TransactionRepository transactionRepository;
 
-    public void inspectTransaction(
-        TransactionEventDTO event
+  public List<TransactionDTO> getTransactionsByFromAccount(String accountNumber){
+      return transactionUtils.getTransactionsByFromAccount(accountNumber);
+  }
+
+
+    public Page<TransactionDTO> searchTransactions(
+        String accountNumber,
+        LocalDate date,
+        String status,
+        String color,
+        String transactionType,
+        Pageable pageable
     ) {
 
-        log.info(
-            """
-            [POLICE-SERVICE]
-            Inspecting Transaction
-            Ref: {}
-            From: {}
-            To: {}
-            Amount: {}
-            """,
-            event.getTransactionReference(),
-            event.getFromAccount(),
-            event.getToAccount(),
-            event.getAmount()
-        );
+        return transactionRepository
+            .findAll((root, query, cb) -> {
 
-        /*
-         * ------------------------------------------------
-         * Load customer transaction history
-         * ------------------------------------------------
-         */
-        List<TransactionDTO> customerHistory =
-            transactionUtils.getTransactionsByFromAccount(
-                event.getFromAccount()
-            );
+                List<Predicate> predicates = new ArrayList<>();
 
-        log.info(
-            "[POLICE-SERVICE] Customer History Loaded | Total Transactions: {}",
-            customerHistory.size()
-        );
+                // account filter
+                if (accountNumber != null && !accountNumber.isEmpty()) {
+                    predicates.add(cb.equal(root.get("fromAccount"), accountNumber));
+                }
 
-        /*
-         * ------------------------------------------------
-         * Load device transaction history
-         * ------------------------------------------------
-         */
-        List<TransactionDTO> deviceHistory =
-            transactionUtils.getTransactionsByDeviceId(
-                event.getDeviceId()
-            );
+                // date filter (IMPORTANT: day range)
+                if (date != null) {
+                    LocalDateTime startOfDay = date.atStartOfDay();
+                    LocalDateTime endOfDay = date.plusDays(1).atStartOfDay();
 
-        log.info(
-            "[POLICE-SERVICE] Device History Loaded | Total Transactions: {}",
-            deviceHistory.size()
-        );
+                    predicates.add(
+                        cb.between(root.get("createdAt"), startOfDay, endOfDay)
+                    );
+                }
 
-        /*
-         * ------------------------------------------------
-         * Load recent transactions (velocity check preparation)
-         * ------------------------------------------------
-         */
-        List<TransactionDTO> recentTransactions =
-            transactionUtils.getRecentTransactions(
-                event.getFromAccount(),
-                Instant.now().minusSeconds(60)
-            );
+                // status filter
+                if (status != null && !status.isEmpty()) {
+                    predicates.add(cb.equal(root.get("status"), status));
+                }
 
-        log.info(
-            """
-            [POLICE-SERVICE]
-            Recent Transactions Loaded
-            Account: {}
-            Last 60 Seconds Count: {}
-            """,
-            event.getFromAccount(),
-            recentTransactions.size()
-        );
+                // color filter
+                if (color != null && !color.isEmpty()) {
+                    predicates.add(cb.equal(root.get("color"), color));
+                }
 
-        /*
-         * ------------------------------------------------
-         * Fraud rules will be added here later
-         * ------------------------------------------------
-         */
+                // transaction type filter
+                if (transactionType != null && !transactionType.isEmpty()) {
+                    predicates.add(cb.equal(root.get("transactionType"), transactionType));
+                }
 
-        log.info(
-            "[POLICE-SERVICE] Transaction inspection completed | Ref: {}",
-            event.getTransactionReference()
-        );
+                return cb.and(predicates.toArray(new Predicate[0]));
+
+            }, pageable)
+            .map(this::mapToDTO);
+    }
+
+    private TransactionDTO mapToDTO(Transaction tx) {
+
+        TransactionDTO dto = new TransactionDTO();
+
+        dto.setId(tx.getId());
+        dto.setTransactionReference(tx.getTransactionReference());
+        dto.setFromAccount(tx.getFromAccount());
+        dto.setToAccount(tx.getToAccount());
+        dto.setAmount(tx.getAmount());
+        dto.setTransactionType(tx.getTransactionType());
+        dto.setStatus(tx.getStatus());
+        dto.setLocation(tx.getLocation());
+        dto.setIpAddress(tx.getIpAddress());
+        dto.setCreatedAt(tx.getCreatedAt());
+        dto.setDeviceId(tx.getDeviceId());
+        dto.setNarration(tx.getNarration());
+        dto.setFraudScore(tx.getFraudScore());
+        dto.setBlocked(tx.getBlocked());
+        dto.setReason(tx.getReason());
+        dto.setColor(tx.getColor());
+
+        return dto;
     }
 }
