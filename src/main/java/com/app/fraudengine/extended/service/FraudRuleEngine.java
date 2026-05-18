@@ -22,11 +22,11 @@ import java.util.List;
 @Slf4j
 public class FraudRuleEngine {
 
-    private static final int HIGH_AMOUNT_SCORE = 80;
-    private static final int NEW_DEVICE_SCORE = 30;
-    private static final int NEW_LOCATION_SCORE = 30;
-    private static final int VELOCITY_SCORE = 40;
-    private static final int VERY_HIGH_AMOUNT_SCORE = 100;
+    private static final int HIGH_AMOUNT_SCORE = 35;
+    private static final int NEW_DEVICE_SCORE = 20;
+    private static final int NEW_LOCATION_SCORE = 20;
+    private static final int VELOCITY_SCORE = 30;
+    private static final int VERY_HIGH_AMOUNT_SCORE = 60;
 
     @Autowired
     private TransactionUtils transactionUtils;
@@ -305,17 +305,17 @@ public class FraudRuleEngine {
         Long count =
             redisService.incrementWithTTL(
                 key,
-                10
+                1
             );
 
-        if (count != null && count >= 3) {
+        if (count != null && count >= 8) {
 
             result.setTriggered(true);
 
             result.setScore(90);
 
             result.setReason(
-                "Velocity fraud detected (3+ transactions in 4 minutes)"
+                "Velocity fraud detected (7+ transactions in 1 minutes)"
             );
 
             log.error(
@@ -327,7 +327,7 @@ public class FraudRuleEngine {
             return result;
         }
 
-        if (count != null && count >= 2) {
+        if (count != null && count >= 5) {
 
             result.setTriggered(true);
 
@@ -354,10 +354,11 @@ public class FraudRuleEngine {
         List<FraudRuleResult> results
     ) {
 
-        return results.stream()
+        int total =  results.stream()
             .filter(FraudRuleResult::isTriggered)
             .mapToInt(FraudRuleResult::getScore)
             .sum();
+        return Math.min(total, 100);
     }
 
     /**
@@ -388,7 +389,7 @@ public class FraudRuleEngine {
         int score
     ) {
 
-        if (score >= 100) {
+        if (score >= 80) {
 
             transaction.setColor(FraudColor.RED);
 
@@ -405,13 +406,13 @@ public class FraudRuleEngine {
 
             publisherService.publishInspectionResult(result);
 
-        } else if (score >= 90) {
+        } else if (score >= 50) {
 
             transaction.setColor(FraudColor.ORANGE);
 
             transaction.setBlocked(false);
 
-        } else if (score >= 10) {
+        } else if (score >= 20) {
 
             transaction.setColor(FraudColor.YELLOW);
 
