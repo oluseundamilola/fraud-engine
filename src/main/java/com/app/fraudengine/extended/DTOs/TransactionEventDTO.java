@@ -29,5 +29,6 @@ public class TransactionEventDTO {
 
     private String deviceId;
     private String narration;
+    private BigDecimal customerBalance;
 }
 
